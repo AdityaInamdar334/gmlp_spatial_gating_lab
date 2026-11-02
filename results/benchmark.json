@@ -1,0 +1,460 @@
+{
+  "description": "Synthetic educational task; no pretrained model or benchmark reproduction.",
+  "environment": {
+    "python": "3.13.5",
+    "torch": "2.10.0+cpu",
+    "device": "cpu"
+  },
+  "settings": {
+    "seeds": 3,
+    "steps": 140,
+    "batch_size": 96,
+    "length": 12,
+    "width": 48,
+    "eval_size": 768
+  },
+  "summary": [
+    {
+      "task": "fixed",
+      "model": "gmlp",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00027,
+      "train_seconds_mean": 0.601,
+      "batch32_latency_ms_mean": 0.657,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "attention",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00063,
+      "train_seconds_mean": 1.577,
+      "batch32_latency_ms_mean": 1.289,
+      "parameters": 38978
+    },
+    {
+      "task": "fixed",
+      "model": "no_mixing",
+      "accuracy_mean": 0.49913,
+      "accuracy_std": 0.00717,
+      "ce_mean": 0.69569,
+      "train_seconds_mean": 0.672,
+      "batch32_latency_ms_mean": 0.478,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "gmlp",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00046,
+      "train_seconds_mean": 0.606,
+      "batch32_latency_ms_mean": 0.493,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "attention",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00063,
+      "train_seconds_mean": 1.352,
+      "batch32_latency_ms_mean": 1.224,
+      "parameters": 38978
+    },
+    {
+      "task": "content",
+      "model": "no_mixing",
+      "accuracy_mean": 0.50304,
+      "accuracy_std": 0.00717,
+      "ce_mean": 0.69421,
+      "train_seconds_mean": 0.564,
+      "batch32_latency_ms_mean": 0.485,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "random_init",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00046,
+      "train_seconds_mean": 0.606,
+      "batch32_latency_ms_mean": 0.491,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "gmlp",
+      "accuracy_mean": 0.53212,
+      "accuracy_std": 0.04726,
+      "ce_mean": 2.47432,
+      "train_seconds_mean": 0.783,
+      "batch32_latency_ms_mean": 0.602,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "amlp",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00051,
+      "train_seconds_mean": 1.132,
+      "batch32_latency_ms_mean": 0.873,
+      "parameters": 21626
+    },
+    {
+      "task": "content_ood",
+      "model": "attention",
+      "accuracy_mean": 1.0,
+      "accuracy_std": 0.0,
+      "ce_mean": 0.00049,
+      "train_seconds_mean": 1.392,
+      "batch32_latency_ms_mean": 1.367,
+      "parameters": 38978
+    },
+    {
+      "task": "content_ood",
+      "model": "no_mixing",
+      "accuracy_mean": 0.49175,
+      "accuracy_std": 0.0168,
+      "ce_mean": 0.69674,
+      "train_seconds_mean": 0.76,
+      "batch32_latency_ms_mean": 0.686,
+      "parameters": 15290
+    }
+  ],
+  "runs": [
+    {
+      "task": "fixed",
+      "model": "gmlp",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.0004,
+      "train_seconds": 0.62,
+      "batch32_latency_ms": 0.578,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "gmlp",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00023,
+      "train_seconds": 0.585,
+      "batch32_latency_ms": 0.465,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "gmlp",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00017,
+      "train_seconds": 0.597,
+      "batch32_latency_ms": 0.927,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "attention",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00064,
+      "train_seconds": 1.511,
+      "batch32_latency_ms": 1.351,
+      "parameters": 38978
+    },
+    {
+      "task": "fixed",
+      "model": "attention",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00058,
+      "train_seconds": 1.548,
+      "batch32_latency_ms": 1.291,
+      "parameters": 38978
+    },
+    {
+      "task": "fixed",
+      "model": "attention",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00067,
+      "train_seconds": 1.673,
+      "batch32_latency_ms": 1.224,
+      "parameters": 38978
+    },
+    {
+      "task": "fixed",
+      "model": "no_mixing",
+      "seed": 0,
+      "accuracy": 0.5026,
+      "cross_entropy": 0.69339,
+      "train_seconds": 0.767,
+      "batch32_latency_ms": 0.454,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "no_mixing",
+      "seed": 1,
+      "accuracy": 0.50391,
+      "cross_entropy": 0.69387,
+      "train_seconds": 0.636,
+      "batch32_latency_ms": 0.498,
+      "parameters": 15290
+    },
+    {
+      "task": "fixed",
+      "model": "no_mixing",
+      "seed": 2,
+      "accuracy": 0.49089,
+      "cross_entropy": 0.6998,
+      "train_seconds": 0.614,
+      "batch32_latency_ms": 0.482,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "gmlp",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00063,
+      "train_seconds": 0.654,
+      "batch32_latency_ms": 0.514,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "gmlp",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00033,
+      "train_seconds": 0.611,
+      "batch32_latency_ms": 0.462,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "gmlp",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00041,
+      "train_seconds": 0.553,
+      "batch32_latency_ms": 0.504,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "attention",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00048,
+      "train_seconds": 1.241,
+      "batch32_latency_ms": 1.341,
+      "parameters": 38978
+    },
+    {
+      "task": "content",
+      "model": "attention",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00056,
+      "train_seconds": 1.258,
+      "batch32_latency_ms": 1.131,
+      "parameters": 38978
+    },
+    {
+      "task": "content",
+      "model": "attention",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00084,
+      "train_seconds": 1.556,
+      "batch32_latency_ms": 1.2,
+      "parameters": 38978
+    },
+    {
+      "task": "content",
+      "model": "no_mixing",
+      "seed": 0,
+      "accuracy": 0.51042,
+      "cross_entropy": 0.69428,
+      "train_seconds": 0.57,
+      "batch32_latency_ms": 0.499,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "no_mixing",
+      "seed": 1,
+      "accuracy": 0.5026,
+      "cross_entropy": 0.6948,
+      "train_seconds": 0.528,
+      "batch32_latency_ms": 0.478,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "no_mixing",
+      "seed": 2,
+      "accuracy": 0.49609,
+      "cross_entropy": 0.69356,
+      "train_seconds": 0.594,
+      "batch32_latency_ms": 0.478,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "random_init",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.0005,
+      "train_seconds": 0.595,
+      "batch32_latency_ms": 0.465,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "random_init",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00042,
+      "train_seconds": 0.6,
+      "batch32_latency_ms": 0.507,
+      "parameters": 15290
+    },
+    {
+      "task": "content",
+      "model": "random_init",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00046,
+      "train_seconds": 0.622,
+      "batch32_latency_ms": 0.502,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "gmlp",
+      "seed": 0,
+      "accuracy": 0.58594,
+      "cross_entropy": 1.49074,
+      "train_seconds": 0.871,
+      "batch32_latency_ms": 0.834,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "gmlp",
+      "seed": 1,
+      "accuracy": 0.4974,
+      "cross_entropy": 2.42719,
+      "train_seconds": 0.851,
+      "batch32_latency_ms": 0.492,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "gmlp",
+      "seed": 2,
+      "accuracy": 0.51302,
+      "cross_entropy": 3.50503,
+      "train_seconds": 0.627,
+      "batch32_latency_ms": 0.48,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "amlp",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.0005,
+      "train_seconds": 1.165,
+      "batch32_latency_ms": 0.77,
+      "parameters": 21626
+    },
+    {
+      "task": "content_ood",
+      "model": "amlp",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00067,
+      "train_seconds": 1.307,
+      "batch32_latency_ms": 0.926,
+      "parameters": 21626
+    },
+    {
+      "task": "content_ood",
+      "model": "amlp",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00036,
+      "train_seconds": 0.925,
+      "batch32_latency_ms": 0.923,
+      "parameters": 21626
+    },
+    {
+      "task": "content_ood",
+      "model": "attention",
+      "seed": 0,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00038,
+      "train_seconds": 1.448,
+      "batch32_latency_ms": 1.231,
+      "parameters": 38978
+    },
+    {
+      "task": "content_ood",
+      "model": "attention",
+      "seed": 1,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00057,
+      "train_seconds": 1.371,
+      "batch32_latency_ms": 1.169,
+      "parameters": 38978
+    },
+    {
+      "task": "content_ood",
+      "model": "attention",
+      "seed": 2,
+      "accuracy": 1.0,
+      "cross_entropy": 0.00052,
+      "train_seconds": 1.357,
+      "batch32_latency_ms": 1.702,
+      "parameters": 38978
+    },
+    {
+      "task": "content_ood",
+      "model": "no_mixing",
+      "seed": 0,
+      "accuracy": 0.51042,
+      "cross_entropy": 0.69444,
+      "train_seconds": 0.874,
+      "batch32_latency_ms": 0.854,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "no_mixing",
+      "seed": 1,
+      "accuracy": 0.47786,
+      "cross_entropy": 0.69437,
+      "train_seconds": 0.808,
+      "batch32_latency_ms": 0.555,
+      "parameters": 15290
+    },
+    {
+      "task": "content_ood",
+      "model": "no_mixing",
+      "seed": 2,
+      "accuracy": 0.48698,
+      "cross_entropy": 0.70141,
+      "train_seconds": 0.598,
+      "batch32_latency_ms": 0.648,
+      "parameters": 15290
+    }
+  ]
+}
