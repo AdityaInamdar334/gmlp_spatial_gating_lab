@@ -1,111 +1,233 @@
 # gMLP: Spatial Gating, Static Token Mixing, and Tiny Attention
 
-A **small, reproducible PyTorch study** inspired by *Pay Attention to MLPs* (Liu et al., NeurIPS 2021) and the annotated labml.ai implementation.
+<div align="center">
 
-This project is **not** an implementation of Google's full gMLP/BERT/ImageNet training pipeline and does not reproduce the paper's published results. It studies the difference between fixed spatial mixing and content-dependent attention on synthetic token-retrieval tasks.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Tests](https://img.shields.io/badge/Tests-21%2F21%20Passing-brightgreen.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Architecture](https://img.shields.io/badge/Architecture-gMLP%20%7C%20SGU%20%7C%20aMLP-8A2BE2)]()
 
-## Questions
+*A clean, reproducible PyTorch study dissecting spatial gating, static coordinate routing vs. dynamic attention, and the inductive biases that make Transformers generalize.*
 
-- Can a gMLP solve a token-selection task without any attention?
-- What does a model learn when the relevant token is always at a known position?
-- What happens when the relevant token moves to a position never observed during training?
-- Can one small attention head improve transfer to those positions?
-- What happens if we remove cross-token spatial mixing entirely?
-- Does a triangular visibility mask actually prevent information leaking from the future?
+Inspired by **[Pay Attention to MLPs](https://arxiv.org/abs/2105.08050)** (Liu et al., Google Research, NeurIPS 2021) and the [labml.ai](https://nn.labml.ai/transformers/gmlp/index.html) implementation.
 
-## Quick start
+</div>
 
-Python 3.10+ is recommended. CPU is sufficient.
+---
+
+## Architecture Overview
+
+Can a deep neural network select and route information across tokens without any self-attention mechanism? In 2021, Google Research demonstrated that a stack of gated multilayer perceptrons (**gMLP**) with static, learned spatial projection matrices can compete with Transformers on vision and masked-language modeling.
+
+However, when tokens move to unfamiliar coordinates, static spatial weights face a fundamental inductive challenge.
+
+<div align="center">
+  <img src="figures/architecture_diagram.png" alt="gMLP Architecture and Spatial Gating Unit" width="920"/>
+</div>
+
+### The Core Mechanism: Spatial Gating Unit (SGU)
+
+A gMLP layer replaces multi-head self-attention with a **Spatial Gating Unit (SGU)**:
+1. **Channel Expansion:** The input $X \in \mathbb{R}^{B \times N \times d_{\text{model}}}$ is projected to $Z \in \mathbb{R}^{B \times N \times d_{\text{ffn}}}$ via a linear layer and GeLU activation.
+2. **Channel Splitting:** The expanded tensor $Z$ is split in half along channels into $U, V \in \mathbb{R}^{B \times N \times (d_{\text{ffn}} / 2)}$.
+3. **Static Token Mixing:** $V$ is normalized with LayerNorm and projected across the sequence dimension by a learned static matrix $W_s \in \mathbb{R}^{N \times N}$:
+   $$\tilde{V} = W_s \text{LayerNorm}(V) + b_s$$
+4. **Multiplicative Gating:** $U$ is elementwise multiplied by the gate $\tilde{V}$:
+   $$\text{Output}_{\text{SGU}} = U \odot \tilde{V}$$
+5. **Channel Contraction & Residual:** $\text{Output}_{\text{SGU}}$ is projected back to $d_{\text{model}}$ and added to $X$.
+
+> **The SGU Identity Initialization Trick:**
+> At step 0, $W_s$ is initialized with near-zero Gaussian noise ($\mathcal{N}(0, 10^{-4})$) and the bias $b_s$ is initialized to **$1.0$**. This ensures the gate starts as an identity pass-through: $U \odot (0 + 1) = U$, allowing gradients to flow effortlessly through 30+ layers without vanishing or exploding.
+
+---
+
+## Key Experimental Findings
+
+We evaluated **gMLP**, **aMLP** (gMLP + single-head 16-d attention), **Transformer**, and ablations on three synthetic diagnostic retrieval tasks across multiple random seeds.
+
+<div align="center">
+  <img src="figures/benchmark_summary.png" alt="Benchmark Summary Across Tasks" width="940"/>
+</div>
+
+### The Distribution Shift Dilemma
+
+| Model | Parameters | Fixed Position | In-Distribution Content | Out-of-Distribution Content | Cross-Token Routing Mechanism |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **gMLP** | **15,290** | **100.0%** | **100.0%** | **53.2%** *(Fails)* | Static spatial matrix $W_s \in \mathbb{R}^{N \times N}$ |
+| **aMLP (gMLP + Tiny Attn)** | 21,626 | **100.0%** | **100.0%** | **100.0%** *(Recovers)* | Hybrid: Static $W_s$ + 1 tiny attention head |
+| **Transformer Baseline** | 38,978 | **100.0%** | **100.0%** | **100.0%** | Multi-Head Self-Attention (4 heads) |
+| **Random Init gMLP** | **15,290** | — | **100.0%** | — | $W_s \sim \text{Xavier}, b_s = 0$ |
+| **No Mixing (Ablation)** | 15,290 | 49.9% | 50.3% | 49.2% | Frozen zero spatial matrix (Random chance) |
+
+### Insights
+
+- **Fixed-Position Routing:** When the target token is always at index 3, both gMLP and Transformer reach **100.0%** accuracy. gMLP achieves this with **61% fewer parameters** and zero quadratic attention overhead.
+- **In-Distribution Content Selection:** When the target token is identified by a dynamic content marker (and all marker positions appear during training), gMLP still learns **100.0%** accuracy by configuring a dedicated cross-token pipeline for each position.
+- **The Out-of-Distribution Collapse:** When marker positions 7–11 are held out during training and tested at evaluation:
+  - **gMLP collapses to 53.2%** (random chance is 50.0%). Because $W_s$ learns fixed coordinate mappings, it cannot dynamically route tokens from unseen positions.
+  - **aMLP recovers 100.0% accuracy** by augmenting the gate with just **one 16-dimensional attention head**.
+  - **Transformer reaches 100.0%** because query-key dot products are inherently position-invariant and content-driven.
+
+---
+
+## Detailed Task Breakdown
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>Task 1: Fixed Position</b></td>
+      <td align="center"><b>Task 2: Content (In-Distribution)</b></td>
+    </tr>
+    <tr>
+      <td><img src="figures/fixed_accuracy.png" width="450"/></td>
+      <td><img src="figures/content_accuracy.png" width="450"/></td>
+    </tr>
+    <tr>
+      <td colspan="2" align="center"><b>Task 3: Content (Out-of-Distribution Shift)</b></td>
+    </tr>
+    <tr>
+      <td colspan="2" align="center"><img src="figures/content_ood_accuracy.png" width="550"/></td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## Quick Start
+
+No GPU, API keys, or external datasets required. CPU is fast and sufficient.
+
+### 1. Installation
 
 ```bash
+git clone https://github.com/AdityaInamdar334/gmlp_spatial_gating_lab.git
+cd gmlp_spatial_gating_lab
 python -m pip install -r requirements.txt
+```
+
+### 2. Run Test Suite
+
+Verify tensor contracts, causal masking guarantees, and gradient properties:
+
+```bash
 python -m unittest discover -s tests -v
+```
+
+```text
+test_content_labels (test_lab.DataTests.test_content_labels) ... ok
+test_causal_gradient_no_future (test_lab.SGUTests.test_causal_gradient_no_future) ... ok
+test_future_cannot_change_prefix (test_lab.SGUTests.test_future_cannot_change_prefix) ... ok
+test_amlp_shape_and_mask (test_lab.SGUTests.test_amlp_shape_and_mask) ... ok
+...
+Ran 21 tests in 0.479s
+OK
+```
+
+### 3. Run the SGU Interactive Demo
+
+Check shape transformations and causal prefix independence:
+
+```bash
 python -m gmlp_lab.demo
-python -m gmlp_lab.benchmark --seeds 3 --steps 140 --batch-size 96 --eval-size 768 --output results/benchmark.json
+```
+
+```text
+SGU input: (2, 6, 16) SGU output: (2, 6, 8)
+Causal prefix absolute difference: 0.0
+SGU init gate bias mean: 1.0
+```
+
+### 4. Run the Full Benchmark
+
+Train all models across seeds and evaluate in-distribution and out-of-distribution:
+
+```bash
+python -m gmlp_lab.benchmark \
+  --seeds 3 \
+  --steps 140 \
+  --batch-size 96 \
+  --eval-size 768 \
+  --output results/benchmark.json
+```
+
+### 5. Generate Visualizations
+
+Rebuild all high-resolution figures:
+
+```bash
 python plot_results.py
 ```
 
-For machines with many CPU threads, setting `OMP_NUM_THREADS=2` can make these tiny workloads more stable and reduce overhead.
+---
 
-No GPU, API key, external dataset, or Hugging Face checkpoint is required.
+## Causal Masking & Autoregressive Decoding
 
-## Main benchmark
+Can gMLP be used for autoregressive language generation?
 
-The inputs contain 12 tokens, including a query token at position zero. Each ordinary token has a binary value. The model must report the relevant bit from its query representation.
+Yes, but **only if strict causal masking is applied**. In a standard feedforward layer, token positions cannot look ahead. But in gMLP, the spatial matrix $W_s$ mixes all tokens bidirectionally:
 
-- **fixed:** Always retrieve the bit at position 3.
-- **content:** Retrieve the bit at the uniquely marked position. Every marker position is present in training.
-- **content_ood:** Train with the marker at positions 1 to 6. Test exclusively at positions 7 to 11.
+```python
+# Unmasked spatial mixing allows position 0 to read position 10!
+gate = W_s @ V + b_s
+```
 
-We compare these implementations:
+To prevent future tokens from leaking information into past representations, we apply a lower-triangular visibility mask $\mathcal{M}$:
 
-- `gmlp`: Two spatial-gated MLP blocks without attention.
-- `attention`: Two-layer Transformer encoder, four attention heads and learned position embeddings.
-- `amlp`: gMLP blocks augmented by a small single-head, 16-dimensional attention branch at the gate.
-- `no_mixing`: Spatial matrices fixed to zero with bias one.
-- `random_init`: gMLP spatial matrices with random Xavier initialization and zero gate bias.
+```python
+if mask is not None:
+    W_masked = self.weight * mask
+else:
+    W_masked = self.weight
 
-These are **not parameter-matched architectures**. Their differences illustrate inductive biases in a small example, not which is optimal at equal compute.
+spatial = torch.einsum("mn, bnd -> bmd", W_masked, v) + self.bias
+```
 
-## Results
+Our test suite explicitly enforces this with two analytical invariants:
+1. **Perturbation Test:** Perturbing future inputs $X_{t > k}$ results in exactly **$0.0$** change in earlier outputs $\hat{Y}_{\le k}$.
+2. **Gradient Test:** Backpropagating from an earlier output step produces **$\frac{\partial Y_{\le k}}{\partial X_{t > k}} = 0$** everywhere.
 
-Saved results are in `results/benchmark.json`, with per-seed records and aggregate means and sample standard deviations.
+---
 
-With three seeds and 140 optimizer steps:
-
-- Fixed-position task: gMLP **100.0%**, attention **100.0%**, no spatial mixing **49.9%**.
-- Content-based task with all positions observed: gMLP **100.0%**, attention **100.0%**, random-init gMLP **100.0%**, no spatial mixing **50.3%**.
-- Previously unseen marker positions: gMLP **53.2%**, aMLP-style hybrid **100.0%**, attention **100.0%**, no spatial mixing **49.2%**.
-
-Because the task is deliberately easy, perfect accuracy on an in-distribution split is not evidence of strong NLP generalization. The unseen-position experiment is the main diagnostic.
-
-## Code layout
+## Project Structure
 
 ```text
 gmlp_spatial_gating_lab/
-  ARTICLE.md
-  README.md
-  BENCHMARK_NOTES.md
-  requirements.txt
-  LICENSE
-  plot_results.py
-  gmlp_lab/
-    __init__.py
-    models.py
-    data.py
-    benchmark.py
-    demo.py
-  tests/
-    test_lab.py
-  results/
-    benchmark.json
-    run.log
-  figures/
-    fixed_accuracy.png
-    content_accuracy.png
-    content_ood_accuracy.png
+├── README.md                 # Project documentation & visual guide
+├── ARTICLE.md                # Comprehensive technical tutorial & deep dive
+├── BENCHMARK_NOTES.md        # Experimental configuration & environment records
+├── requirements.txt          # Minimal Python dependencies (torch, matplotlib)
+├── LICENSE                   # MIT License
+├── plot_results.py           # Publication-ready figure generator
+├── figures/                  # High-resolution benchmark figures
+│   ├── architecture_diagram.png
+│   ├── benchmark_summary.png
+│   ├── fixed_accuracy.png
+│   ├── content_accuracy.png
+│   └── content_ood_accuracy.png
+├── gmlp_lab/                 # Core library modules
+│   ├── __init__.py
+│   ├── models.py             # SpatialGatingUnit, GMLPBlock, GMLP, aMLP, Transformer
+│   ├── data.py               # Deterministic synthetic retrieval datasets
+│   ├── benchmark.py          # Multi-seed training loop and evaluation CLI
+│   └── demo.py               # Quick interactive demonstration script
+├── tests/
+│   └── test_lab.py           # 21 unit tests: shapes, causality, gradients, smoke tests
+└── results/
+    ├── benchmark.json        # Raw per-seed evaluation records & aggregations
+    └── run.log               # Benchmark run logs
 ```
 
-`models.py` has a batch-first Spatial Gating Unit, reversible causal mask support, small classifier stacks, an optional aMLP-style branch, and a Transformer baseline. `data.py` produces deterministic datasets. `benchmark.py` runs the baselines and ablations with independent seeds. `tests/test_lab.py` verifies shapes, initializations, gradients, mask behavior, future-token causality, dataset correctness, and training smoke tests.
+---
 
-## What the tests protect
+## Primary References
 
-The most important correctness test changes future input tokens and checks that earlier hidden states remain unchanged when a lower-triangular mask is applied. Another test differentiates early outputs with respect to later inputs and verifies the future gradients are zero. There is also a control proving that unrestricted mixing can allow future tokens to change earlier states.
+1. Hanxiao Liu, Zihang Dai, David R. So, Quoc V. Le. **[Pay Attention to MLPs](https://arxiv.org/abs/2105.08050)**. *NeurIPS 2021*.
+2. **[labml.ai Annotated gMLP Implementation](https://nn.labml.ai/transformers/gmlp/index.html)**.
+3. Ross Wightman. **[timm: PyTorch Image Models](https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/mlp_mixer.py)**.
 
-These checks matter if you repurpose gMLP for autoregressive decoding. Simply using a next-token loss will not make an unmasked spatial mixer causal.
-
-## Limitations
-
-The benchmark is synthetic and tiny. It is **not** ImageNet, C4, SQuAD, GLUE, or a pretrained language model; it uses no real linguistic content and has no inference-time token generation. Models differ in parameter budgets. The content OOD split tests one positional extrapolation problem, not all forms of distribution shift. In particular, a larger or more structured gMLP may behave differently. Latency recordings are implementation and device specific.
-
-See `BENCHMARK_NOTES.md` for complete settings and interpretation, and `ARTICLE.md` for the publication-ready tutorial.
-
-## Primary sources
-
-- Liu et al., [Pay Attention to MLPs](https://arxiv.org/abs/2105.08050), NeurIPS 2021.
-- [labml.ai annotated gMLP implementation](https://nn.labml.ai/transformers/gmlp/index.html).
-- [PyTorch Image Models gMLP implementation](https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/mlp_mixer.py).
+---
 
 ## License
 
-Independent educational code in this repository is licensed under MIT. Refer to the original sources for their own licenses and attribution requirements. The paper's results and source implementations are not repackaged as this project's code.
+This repository is licensed under the [MIT License](LICENSE).

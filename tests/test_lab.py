@@ -57,7 +57,7 @@ class SGUTests(unittest.TestCase):
         a=torch.randn(2,9,8)
         b=a.clone()
         b[:,5:]+=torch.randn_like(b[:,5:])*5
-        self.assertGreater(float((block(a)[:,:5]-block(b)[:,:5]).abs().max()),1e-4)
+        self.assertGreater(float((block(a)[:,:5]-block(b)[:,:5]).detach().abs().max()),1e-4)
 
     def test_causal_gradient_no_future(self):
         torch.manual_seed(4)
